@@ -3,6 +3,6 @@
       "target": {
         "namespace": "android_app",
         "package_name": "me.pronadjisapu.app",
-        "sha256_cert_fingerprints": ["B7:00:02:9E:D6:D2:62:1E:F4:C3:2A:1B:18:12:FB:8A:72:64:E0:68:34:33:2C:7C:DE:F9:EE:70:E1:0E:99:A8"]
+        "sha256_cert_fingerprints": ["76:F2:7C:9F:1E:D6:20:4B:3B:A1:C0:22:BD:32:7C:58:27:F7:A6:20:8D:38:EE:C4:98:DB:A4:C5:A2:63:DE:0B"]
       }
     }]
