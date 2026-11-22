@@ -6,8 +6,8 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="theme-color" content="#0f172a" />
-  <link rel="manifest" href="/manifest.json" />
-  <link rel="apple-touch-icon" href="/icon-512.png" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icon-512.png" />
   <title>Pronađi Šapu / Find a Paw</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
@@ -854,3 +854,11 @@
   </script>
 </body>
 </html>
+```[cite: 2]
+
+---
+
+### 3. Push and Re-Test PWABuilder
+1. Open **Terminal** on your Mac and push the updated `index.html` and `manifest.json`:
+   ```bash
+   cd ~/Desktop/pronadji-sapu && git add index.html manifest.json && git commit -m "Fix relative manifest and icon links in index.html" && git push
