@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="theme-color" content="#0f172a" />
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="apple-touch-icon" href="/icon-512.png" />
+  <title>Pronađi Šapu / Find a Paw</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { -webkit-tap-highlight-color: transparent; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    .safe-bottom { padding-bottom: env(safe-area-inset-bottom, 16px); }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col">
+
+  <!-- HEADER -->
+  <header class="sticky top-0 z-30 bg-slate-900/90 backdrop-blur border-b border-slate-800 px-4 py-3 flex items-center justify-between">
+    <div class="flex items-center gap-2">
+      <span class="text-2xl">🐾</span>
+      <div>
+        <h1 id="app-title" class="font-bold text-lg leading-tight text-amber-400">Pronađi Šapu</h1>
+        <p id="app-subtitle" class="text-xs text-slate-400">Pomoć životinjama u realnom vremenu</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-2">
+      <button id="admin-toggle-btn" type="button" class="px-3 py-1.5 rounded-full bg-slate-800 hover:bg-slate-700 text-xs font-semibold border border-slate-700 text-slate-300">
+        🔒 Admin
+      </button>
+      <button id="lang-toggle" type="button" class="px-3 py-1.5 rounded-full bg-slate-800 hover:bg-slate-700 text-xs font-semibold border border-slate-700">
+        EN / CG
+      </button>
+    </div>
+  </header>
+
+  <!-- LIVE TOAST NOTIFICATION -->
+  <div id="toast" class="fixed top-16 left-4 right-4 z-50 hidden bg-emerald-600 text-white px-4 py-3 rounded-xl shadow-lg flex items-center justify-between">
+    <span id="toast-text" class="text-sm font-medium">Nova prijava u blizini!</span>
+    <button type="button" id="close-toast-btn" class="ml-3 font-bold">✕</button>
+  </div>
+
+  <!-- ADMIN LOGIN MODAL -->
+  <div id="admin-modal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-sm w-full p-5 space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+        <h3 id="admin-modal-title" class="font-bold text-base text-amber-400">Admin pristup</h3>
+        <button type="button" id="close-admin-modal-btn" class="text-slate-400 hover:text-white text-sm px-2 py-1">✕</button>
+      </div>
+      <p id="admin-modal-desc" class="text-xs text-slate-300">
+        Unesite administratorsku lozinku da biste otključali trajno brisanje stavki iz arhive.
+      </p>
+      <div>
+        <input id="admin-password-input" type="password" placeholder="Lozinka..." class="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-sm focus:outline-none focus:border-amber-400" />
+      </div>
+      <button type="button" id="confirm-admin-btn" class="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-sm transition">
+        OTKLJUČAJ ADMIN MOD
+      </button>
+    </div>
+  </div>
+
+  <!-- RESOLVE MODAL (POTVRDA ZBRINJAVANJA) -->
+  <div id="resolve-modal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+        <h3 id="modal-title" class="font-bold text-base text-emerald-400">Potvrda zbrinjavanja</h3>
+        <button type="button" id="close-modal-btn" class="text-slate-400 hover:text-white text-sm px-2 py-1">✕</button>
+      </div>
+      <p id="modal-case-info" class="text-xs text-amber-400 font-mono bg-slate-950 p-2 rounded-lg"></p>
+      <p id="modal-desc" class="text-xs text-slate-300">
+        Radi sprečavanja zloupotrebe, molimo unesite vaš broj telefona i kratku informaciju kako je životinja zbrinuta. Slika će biti sačuvana u arhivi u visoko komprimovanom formatu.
+      </p>
+      <div>
+        <label id="lbl-resolver-phone" class="block text-xs font-semibold text-slate-300 mb-1">Vaš broj telefona *</label>
+        <input id="resolver-phone-input" type="tel" placeholder="+382 67 000 000" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-sm focus:outline-none focus:border-emerald-400" />
+      </div>
+      <div>
+        <label id="lbl-resolver-note" class="block text-xs font-semibold text-slate-300 mb-1">Kako je riješeno? (opciono)</label>
+        <input id="resolver-note-input" type="text" placeholder="Npr. Preuzeo vlasnik, odveden kod veterinara..." class="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-sm focus:outline-none focus:border-emerald-400" />
+      </div>
+      <button type="button" id="confirm-resolve-btn" class="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-sm transition">
+        POTVRDI I PREBACI U ARHIVU
+      </button>
+    </div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <main class="flex-1 max-w-lg w-full mx-auto p-4 space-y-5 pb-28">
+
+    <!-- NEW REPORT BUTTON -->
+    <button id="open-form-btn" type="button" class="w-full py-4 px-5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-slate-950 font-extrabold text-lg shadow-lg shadow-amber-500/20 flex items-center justify-center gap-3 active:scale-[0.99] transition">
+      <span class="text-2xl">📸</span>
+      <span id="btn-report-label">PRIJAVI</span>
+    </button>
+
+    <!-- REPORT FORM -->
+    <section id="report-form-section" class="hidden bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-4 shadow-xl">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+        <h2 id="form-heading" class="font-bold text-base text-amber-400">Nova prijava</h2>
+        <button id="close-form-btn" type="button" class="text-slate-400 hover:text-white text-sm px-2 py-1">✕</button>
+      </div>
+
+      <!-- 1. Photo (Camera + Gallery support for Android & iOS) -->
+      <div>
+        <label id="lbl-photo" class="block text-xs font-semibold text-slate-300 mb-1.5">1. Fotografija životinje *</label>
+        <div class="grid grid-cols-2 gap-2">
+          <label for="camera-input" class="cursor-pointer py-2.5 px-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs text-center flex items-center justify-center gap-1.5 transition">
+            <span>📷</span> <span id="btn-take-photo">Slikaj kamerom</span>
+          </label>
+          <label for="gallery-input" class="cursor-pointer py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-bold text-xs text-center flex items-center justify-center gap-1.5 transition">
+            <span>🖼️</span> <span id="btn-choose-gallery">Izaberi iz galerije</span>
+          </label>
+        </div>
+        <input id="camera-input" type="file" accept="image/*" capture="environment" class="hidden" />
+        <input id="gallery-input" type="file" accept="image/*" class="hidden" />
+        <img id="photo-preview" class="hidden mt-2.5 w-full h-48 object-cover rounded-xl border border-slate-700" />
+      </div>
+
+      <!-- 2. Status -->
+      <div>
+        <label id="lbl-status" class="block text-xs font-semibold text-slate-300 mb-1.5">2. Status životinje *</label>
+        <div class="grid grid-cols-3 gap-2">
+          <button type="button" data-status="injured" class="status-btn py-2 px-2 rounded-xl border border-amber-400 bg-amber-500/20 text-amber-300 text-xs font-bold text-center">🚑 Povrijeđen</button>
+          <button type="button" data-status="lost" class="status-btn py-2 px-2 rounded-xl border border-slate-700 bg-slate-800 text-slate-300 text-xs font-bold text-center">🏷️ Izgubljen</button>
+          <button type="button" data-status="abandoned" class="status-btn py-2 px-2 rounded-xl border border-slate-700 bg-slate-800 text-slate-300 text-xs font-bold text-center">🐾 Napušten</button>
+        </div>
+      </div>
+
+      <!-- 3. Mandatory Description / Breed -->
+      <div>
+        <label id="lbl-desc" class="block text-xs font-semibold text-slate-300 mb-1">3. Vrsta / Rasa i opis životinje *</label>
+        <textarea id="desc-input" rows="2" placeholder="Obavezno: npr. Mješanac, žuti, srednjeg rasta, ima crvenu ogrlicu..." class="w-full px-3.5 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white text-sm focus:outline-none focus:border-amber-400"></textarea>
+      </div>
+
+      <!-- 4. Phone -->
+      <div>
+        <label id="lbl-phone" class="block text-xs font-semibold text-slate-300 mb-1">4. Vaš broj telefona *</label>
+        <input id="phone-input" type="tel" placeholder="+382 67 000 000" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-sm focus:outline-none focus:border-amber-400" />
+      </div>
+
+      <!-- 5. Voice Message -->
+      <div>
+        <label id="lbl-voice" class="block text-xs font-semibold text-slate-300 mb-1.5">5. Glasovna poruka (opciono)</label>
+        <div class="flex items-center gap-2">
+          <button type="button" id="record-btn" class="px-4 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs font-bold text-amber-400 flex items-center gap-2">
+            <span>🎙️</span> <span id="record-btn-text">Snimi glas</span>
+          </button>
+          <span id="record-status" class="text-xs text-slate-400"></span>
+        </div>
+        <audio id="audio-preview" controls class="hidden w-full mt-2 h-9"></audio>
+      </div>
+
+      <!-- 6. GPS Location -->
+      <div class="bg-slate-800/70 p-3 rounded-xl flex items-center justify-between">
+        <div>
+          <p id="lbl-gps" class="text-xs font-semibold text-slate-300">GPS Lokacija</p>
+          <p id="gps-coords" class="text-xs text-amber-400 mt-0.5">Čekam lokaciju...</p>
+        </div>
+        <button type="button" id="refresh-gps-btn" class="px-3 py-1.5 rounded-lg bg-slate-700 text-xs font-semibold">📍 Osvježi</button>
+      </div>
+
+      <!-- Submit -->
+      <button type="button" id="submit-report-btn" class="w-full py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-sm shadow-lg transition">
+        OBJAVI PRIJAVU SVIMA
+      </button>
+    </section>
+
+    <!-- TABS: ACTIVE VS ARCHIVE -->
+    <div class="grid grid-cols-2 gap-2 bg-slate-900 p-1.5 rounded-2xl border border-slate-800">
+      <button type="button" id="tab-active" class="py-2.5 px-3 rounded-xl bg-amber-500 text-slate-950 font-extrabold text-xs flex items-center justify-center gap-1.5 transition">
+        <span>🔴</span> <span id="tab-active-label">Aktivne prijave</span> (<span id="count-active">0</span>)
+      </button>
+      <button type="button" id="tab-resolved" class="py-2.5 px-3 rounded-xl text-slate-400 hover:text-white font-bold text-xs flex items-center justify-center gap-1.5 transition">
+        <span>✅</span> <span id="tab-resolved-label">Arhiva zbrinutih</span> (<span id="count-resolved">0</span>)
+      </button>
+    </div>
+
+    <!-- REPORTS LIST -->
+    <div id="reports-list" class="space-y-4">
+      <p class="text-center text-sm text-slate-500 py-8">Učitavanje prijava iz baze...</p>
+    </div>
+  </main>
+
+  <!-- FIREBASE MODULAR SDK -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, updateDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBlBtRzbG1Yz5XbdzHlHDcRXfONDKaVibU",
+      authDomain: "pronadji-sapu-83ddc.firebaseapp.com",
+      projectId: "pronadji-sapu-83ddc",
+      storageBucket: "pronadji-sapu-83ddc.firebasestorage.app",
+      messagingSenderId: "422933817502",
+      appId: "1:422933817502:web:ef90e9a4c0d5f2e3cdf38f"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // Admin password
+    const ADMIN_PASS = "sapa2026";
+    let isAdmin = sessionStorage.getItem('sapu_admin') === 'true';
+
+    let lang = 'sr';
+    let currentTab = 'active';
+    let allReports = [];
+    let resolvingDocId = null;
+    let resolvingPhotoUrl = "";
+    let selectedPhotoFile = null;
+
+    const i18n = {
+      sr: {
+        title: "Pronađi Šapu",
+        subtitle: "Pomoć životinjama u realnom vremenu",
+        reportBtn: "PRIJAVI",
+        formHeading: "Nova prijava",
+        lblPhoto: "1. Fotografija životinje *",
+        takePhoto: "Slikaj kamerom",
+        chooseGallery: "Izaberi iz galerije",
+        lblStatus: "2. Status životinje *",
+        lblDesc: "3. Vrsta / Rasa i opis životinje *",
+        lblPhone: "4. Vaš broj telefona *",
+        lblVoice: "5. Glasovna poruka (opciono)",
+        recordStart: "Snimi glas",
+        recordStop: "Zaustavi snimanje",
+        submitBtn: "OBJAVI PRIJAVU SVIMA",
+        submitting: "Slanje u bazu...",
+        tabActive: "Aktivne prijave",
+        tabResolved: "Arhiva zbrinutih",
+        callBtn: "Pozovi",
+        mapBtn: "Mapa",
+        resolveBtn: "Riješeno / Zbrinuto",
+        resolvedBadge: "ZBRINUTO",
+        statusMap: { injured: "🚑 Povrijeđen", lost: "🏷️ Izgubljen", abandoned: "🐾 Napušten" },
+        emptyActive: "Trenutno nema aktivnih prijava.",
+        emptyResolved: "Arhiva zbrinutih je trenutno prazna.",
+        reportedAt: "Prijavljeno:",
+        resolvedAt: "Zbrinuto:",
+        resolvedBy: "Zbrinuo (tel):",
+        noteLabel: "Napomena:",
+        deleteArchiveBtn: "Obriši iz arhive (Admin)",
+        confirmDeleteArchive: "Da li ste sigurni da želite trajno obrisati ovu stavku iz arhive?",
+        modalTitle: "Potvrda zbrinjavanja",
+        modalDesc: "Radi sprečavanja zloupotrebe, molimo unesite vaš broj telefona i kratku informaciju kako je životinja zbrinuta. Slika ostaje u arhivi maksimalno komprimovana.",
+        confirmArchiveBtn: "POTVRDI I PREBACI U ARHIVU",
+        adminModalTitle: "Admin pristup",
+        adminModalDesc: "Unesite administratorsku lozinku da biste otključali trajno brisanje stavki iz arhive.",
+        adminUnlockBtn: "OTKLJUČAJ ADMIN MOD",
+        wrongPass: "Pogrešna lozinka!"
+      },
+      en: {
+        title: "Find a Paw",
+        subtitle: "Real-time community pet & animal rescue",
+        reportBtn: "REPORT",
+        formHeading: "New Alert",
+        lblPhoto: "1. Photo of the animal *",
+        takePhoto: "Take Photo",
+        chooseGallery: "Choose from Gallery",
+        lblStatus: "2. Animal status *",
+        lblDesc: "3. Breed / Species & description *",
+        lblPhone: "4. Your phone number *",
+        lblVoice: "5. Voice note (optional)",
+        recordStart: "Record voice",
+        recordStop: "Stop recording",
+        submitBtn: "PUBLISH ALERT TO ALL",
+        submitting: "Uploading...",
+        tabActive: "Active Alerts",
+        tabResolved: "Rescued Archive",
+        callBtn: "Call",
+        mapBtn: "Map",
+        resolveBtn: "Mark Rescued",
+        resolvedBadge: "RESCUED",
+        statusMap: { injured: "🚑 Injured", lost: "🏷️ Lost Pet", abandoned: "🐾 Abandoned" },
+        emptyActive: "No active alerts right now.",
+        emptyResolved: "No rescued records yet.",
+        reportedAt: "Reported:",
+        resolvedAt: "Rescued:",
+        resolvedBy: "Rescued by (tel):",
+        noteLabel: "Note:",
+        deleteArchiveBtn: "Delete from Archive (Admin)",
+        confirmDeleteArchive: "Are you sure you want to permanently delete this item from the archive?",
+        modalTitle: "Confirm Rescue",
+        modalDesc: "To prevent misuse, please enter your phone number and a brief note on how the animal was rescued. The photo will remain in the archive heavily compressed.",
+        confirmArchiveBtn: "CONFIRM & MOVE TO ARCHIVE",
+        adminModalTitle: "Admin Access",
+        adminModalDesc: "Enter the administrator password to unlock permanent deletion from the archive.",
+        adminUnlockBtn: "UNLOCK ADMIN MODE",
+        wrongPass: "Incorrect password!"
+      }
+    };
+
+    let selectedStatus = 'injured';
+    let currentLat = null;
+    let currentLng = null;
+    let audioBase64 = "";
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let isFirstLoad = true;
+
+    const formSection = document.getElementById('report-form-section');
+    const cameraInput = document.getElementById('camera-input');
+    const galleryInput = document.getElementById('gallery-input');
+    const photoPreview = document.getElementById('photo-preview');
+    const phoneInput = document.getElementById('phone-input');
+    const descInput = document.getElementById('desc-input');
+    const gpsCoords = document.getElementById('gps-coords');
+    const submitBtn = document.getElementById('submit-report-btn');
+    const reportsList = document.getElementById('reports-list');
+
+    const resolveModal = document.getElementById('resolve-modal');
+    const resolverPhoneInput = document.getElementById('resolver-phone-input');
+    const resolverNoteInput = document.getElementById('resolver-note-input');
+
+    const adminModal = document.getElementById('admin-modal');
+    const adminToggleBtn = document.getElementById('admin-toggle-btn');
+    const adminPasswordInput = document.getElementById('admin-password-input');
+
+    function updateAdminUI() {
+      if (isAdmin) {
+        adminToggleBtn.textContent = "🔓 Admin ON";
+        adminToggleBtn.className = "px-3 py-1.5 rounded-full bg-amber-500/20 text-amber-300 text-xs font-bold border border-amber-500/50";
+      } else {
+        adminToggleBtn.textContent = "🔒 Admin";
+        adminToggleBtn.className = "px-3 py-1.5 rounded-full bg-slate-800 hover:bg-slate-700 text-xs font-semibold border border-slate-700 text-slate-300";
+      }
+    }
+    updateAdminUI();
+
+    adminToggleBtn.addEventListener('click', () => {
+      if (isAdmin) {
+        isAdmin = false;
+        sessionStorage.removeItem('sapu_admin');
+        updateAdminUI();
+        renderReports();
+      } else {
+        adminPasswordInput.value = "";
+        adminModal.classList.remove('hidden');
+        adminPasswordInput.focus();
+      }
+    });
+
+    document.getElementById('close-admin-modal-btn').addEventListener('click', () => {
+      adminModal.classList.add('hidden');
+    });
+
+    document.getElementById('confirm-admin-btn').addEventListener('click', () => {
+      if (adminPasswordInput.value.trim() === ADMIN_PASS) {
+        isAdmin = true;
+        sessionStorage.setItem('sapu_admin', 'true');
+        adminModal.classList.add('hidden');
+        updateAdminUI();
+        renderReports();
+      } else {
+        alert(i18n[lang].wrongPass);
+      }
+    });
+
+    document.getElementById('close-toast-btn').addEventListener('click', () => {
+      document.getElementById('toast').classList.add('hidden');
+    });
+
+    if (localStorage.getItem('user_phone')) {
+      phoneInput.value = localStorage.getItem('user_phone');
+      resolverPhoneInput.value = localStorage.getItem('user_phone');
+    }
+
+    const tabActiveBtn = document.getElementById('tab-active');
+    const tabResolvedBtn = document.getElementById('tab-resolved');
+
+    tabActiveBtn.addEventListener('click', () => {
+      currentTab = 'active';
+      tabActiveBtn.className = "py-2.5 px-3 rounded-xl bg-amber-500 text-slate-950 font-extrabold text-xs flex items-center justify-center gap-1.5 transition";
+      tabResolvedBtn.className = "py-2.5 px-3 rounded-xl text-slate-400 hover:text-white font-bold text-xs flex items-center justify-center gap-1.5 transition";
+      renderReports();
+    });
+
+    tabResolvedBtn.addEventListener('click', () => {
+      currentTab = 'resolved';
+      tabResolvedBtn.className = "py-2.5 px-3 rounded-xl bg-emerald-500 text-slate-950 font-extrabold text-xs flex items-center justify-center gap-1.5 transition";
+      tabActiveBtn.className = "py-2.5 px-3 rounded-xl text-slate-400 hover:text-white font-bold text-xs flex items-center justify-center gap-1.5 transition";
+      renderReports();
+    });
+
+    document.getElementById('lang-toggle').addEventListener('click', () => {
+      lang = lang === 'sr' ? 'en' : 'sr';
+      applyLanguage();
+      renderReports();
+    });
+
+    function applyLanguage() {
+      const t = i18n[lang];
+      document.getElementById('app-title').textContent = t.title;
+      document.getElementById('app-subtitle').textContent = t.subtitle;
+      document.getElementById('btn-report-label').textContent = t.reportBtn;
+      document.getElementById('form-heading').textContent = t.formHeading;
+      document.getElementById('lbl-photo').textContent = t.lblPhoto;
+      document.getElementById('btn-take-photo').textContent = t.takePhoto;
+      document.getElementById('btn-choose-gallery').textContent = t.chooseGallery;
+      document.getElementById('lbl-status').textContent = t.lblStatus;
+      document.getElementById('lbl-desc').textContent = t.lblDesc;
+      document.getElementById('lbl-phone').textContent = t.lblPhone;
+      document.getElementById('lbl-voice').textContent = t.lblVoice;
+      document.getElementById('record-btn-text').textContent = t.recordStart;
+      submitBtn.textContent = t.submitBtn;
+      document.getElementById('tab-active-label').textContent = t.tabActive;
+      document.getElementById('tab-resolved-label').textContent = t.tabResolved;
+      document.getElementById('modal-title').textContent = t.modalTitle;
+      document.getElementById('modal-desc').textContent = t.modalDesc;
+      document.getElementById('confirm-resolve-btn').textContent = t.confirmArchiveBtn;
+      document.getElementById('admin-modal-title').textContent = t.adminModalTitle;
+      document.getElementById('admin-modal-desc').textContent = t.adminModalDesc;
+      document.getElementById('confirm-admin-btn').textContent = t.adminUnlockBtn;
+    }
+
+    document.getElementById('open-form-btn').addEventListener('click', () => {
+      formSection.classList.remove('hidden');
+      getGPS();
+      if ("Notification" in window && Notification.permission === "default") {
+        Notification.requestPermission();
+      }
+    });
+
+    document.getElementById('close-form-btn').addEventListener('click', () => {
+      formSection.classList.add('hidden');
+    });
+
+    document.getElementById('refresh-gps-btn').addEventListener('click', getGPS);
+
+    function getGPS() {
+      gpsCoords.textContent = lang === 'sr' ? "Tražim GPS signal..." : "Getting GPS...";
+      if (!navigator.geolocation) {
+        gpsCoords.textContent = "GPS nije podržan";
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          currentLat = pos.coords.latitude;
+          currentLng = pos.coords.longitude;
+          gpsCoords.textContent = `${currentLat.toFixed(5)}, ${currentLng.toFixed(5)}`;
+        },
+        () => {
+          gpsCoords.textContent = lang === 'sr' ? "Dozvolite lokaciju u podešavanjima!" : "Please allow location access!";
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    }
+
+    function handlePhotoSelect(e) {
+      const file = e.target.files[0];
+      if (file) {
+        selectedPhotoFile = file;
+        photoPreview.src = URL.createObjectURL(file);
+        photoPreview.classList.remove('hidden');
+      }
+    }
+
+    cameraInput.addEventListener('change', handlePhotoSelect);
+    galleryInput.addEventListener('change', handlePhotoSelect);
+
+    document.querySelectorAll('.status-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        selectedStatus = btn.dataset.status;
+        document.querySelectorAll('.status-btn').forEach(b => {
+          b.className = "status-btn py-2 px-2 rounded-xl border border-slate-700 bg-slate-800 text-slate-300 text-xs font-bold text-center";
+        });
+        btn.className = "status-btn py-2 px-2 rounded-xl border border-amber-400 bg-amber-500/20 text-amber-300 text-xs font-bold text-center";
+      });
+    });
+
+    function compressImageToBase64(file, maxWidth = 800, quality = 0.7) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            let width = img.width;
+            let height = img.height;
+            if (width > maxWidth) {
+              height = Math.round((height * maxWidth) / width);
+              width = maxWidth;
+            }
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+            resolve(canvas.toDataURL('image/jpeg', quality));
+          };
+          img.onerror = reject;
+          img.src = event.target.result;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function ultraCompressBase64(base64Str, maxWidth = 280, quality = 0.35) {
+      return new Promise((resolve) => {
+        if (!base64Str) {
+          resolve("");
+          return;
+        }
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          if (width > maxWidth) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL('image/jpeg', quality));
+        };
+        img.onerror = () => resolve(base64Str);
+        img.src = base64Str;
+      });
+    }
+
+    const recordBtn = document.getElementById('record-btn');
+    const recordStatus = document.getElementById('record-status');
+    const audioPreview = document.getElementById('audio-preview');
+
+    recordBtn.addEventListener('click', async () => {
+      if (!mediaRecorder || mediaRecorder.state === 'inactive') {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          mediaRecorder = new MediaRecorder(stream);
+          audioChunks = [];
+          mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+          mediaRecorder.onstop = () => {
+            const blob = new Blob(audioChunks, { type: 'audio/mp4' });
+            audioPreview.src = URL.createObjectURL(blob);
+            audioPreview.classList.remove('hidden');
+            const reader = new FileReader();
+            reader.onloadend = () => { audioBase64 = reader.result; };
+            reader.readAsDataURL(blob);
+            recordStatus.textContent = lang === 'sr' ? "Snimak spreman ✓" : "Audio ready ✓";
+          };
+          mediaRecorder.start();
+          document.getElementById('record-btn-text').textContent = i18n[lang].recordStop;
+          recordStatus.textContent = "🔴 ...";
+        } catch (err) {
+          alert(lang === 'sr' ? "Mikrofon nije dozvoljen." : "Microphone access denied.");
+        }
+      } else {
+        mediaRecorder.stop();
+        document.getElementById('record-btn-text').textContent = i18n[lang].recordStart;
+      }
+    });
+
+    function generateCaseNumber() {
+      const randomNum = Math.floor(1000 + Math.random() * 9000);
+      return `ŠAPA-${randomNum}`;
+    }
+
+    submitBtn.addEventListener('click', async () => {
+      const file = selectedPhotoFile;
+      const phone = phoneInput.value.trim();
+      const desc = descInput.value.trim();
+
+      if (!file) {
+        alert(lang === 'sr' ? "Molimo uslikajte životinju ili izaberite sliku!" : "Please take a photo of the animal or choose one!");
+        return;
+      }
+      if (!desc) {
+        alert(lang === 'sr' ? "Obavezno unesite vrstu/rasu i kratak opis životinje!" : "Please enter breed/species and description!");
+        return;
+      }
+      if (!phone) {
+        alert(lang === 'sr' ? "Unesite vaš broj telefona!" : "Please enter your phone number!");
+        return;
+      }
+
+      localStorage.setItem('user_phone', phone);
+      resolverPhoneInput.value = phone;
+      submitBtn.disabled = true;
+      submitBtn.textContent = i18n[lang].submitting;
+
+      try {
+        const photoUrl = await compressImageToBase64(file);
+        const caseNumber = generateCaseNumber();
+
+        await addDoc(collection(db, "alerts"), {
+          caseNumber,
+          photoUrl,
+          audioUrl: audioBase64,
+          status: selectedStatus,
+          phone,
+          description: desc,
+          lat: currentLat,
+          lng: currentLng,
+          resolved: false,
+          resolvedByPhone: "",
+          resolvedNote: "",
+          resolvedAt: null,
+          createdAt: serverTimestamp()
+        });
+
+        selectedPhotoFile = null;
+        cameraInput.value = "";
+        galleryInput.value = "";
+        photoPreview.classList.add('hidden');
+        descInput.value = "";
+        audioBase64 = "";
+        audioPreview.classList.add('hidden');
+        recordStatus.textContent = "";
+        formSection.classList.add('hidden');
+      } catch (error) {
+        console.error(error);
+        alert("Greška pri slanju: " + error.message);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = i18n[lang].submitBtn;
+      }
+    });
+
+    document.getElementById('close-modal-btn').addEventListener('click', () => {
+      resolveModal.classList.add('hidden');
+      resolvingDocId = null;
+      resolvingPhotoUrl = "";
+    });
+
+    document.getElementById('confirm-resolve-btn').addEventListener('click', async () => {
+      const rPhone = resolverPhoneInput.value.trim();
+      const rNote = resolverNoteInput.value.trim();
+
+      if (!rPhone || rPhone.length < 6) {
+        alert(lang === 'sr' ? "Unesite ispravan broj telefona kako bi ostao trag ko je zatvorio prijavu!" : "Please enter a valid phone number!");
+        return;
+      }
+
+      if (!resolvingDocId) return;
+
+      const btn = document.getElementById('confirm-resolve-btn');
+      btn.disabled = true;
+      btn.textContent = "...";
+
+      try {
+        localStorage.setItem('user_phone', rPhone);
+        const tinyArchivePhoto = await ultraCompressBase64(resolvingPhotoUrl, 280, 0.35);
+
+        await updateDoc(doc(db, "alerts", resolvingDocId), {
+          resolved: true,
+          photoUrl: tinyArchivePhoto,
+          audioUrl: "",
+          resolvedByPhone: rPhone,
+          resolvedNote: rNote,
+          resolvedAt: serverTimestamp()
+        });
+
+        resolveModal.classList.add('hidden');
+        resolverNoteInput.value = "";
+        resolvingDocId = null;
+        resolvingPhotoUrl = "";
+      } catch (err) {
+        alert("Greška: " + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = i18n[lang].confirmArchiveBtn;
+      }
+    });
+
+    function formatDate(timestamp) {
+      if (!timestamp) return "Upravo sada";
+      const d = timestamp.toDate();
+      return d.toLocaleDateString('sr-ME', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' +
+             d.toLocaleTimeString('sr-ME', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    const q = query(collection(db, "alerts"), orderBy("createdAt", "desc"));
+
+    onSnapshot(q, (snapshot) => {
+      const t = i18n[lang];
+
+      snapshot.docChanges().forEach((change) => {
+        if (change.type === "added" && !isFirstLoad) {
+          const data = change.doc.data();
+          if (!data.resolved) {
+            showNotification(t.statusMap[data.status] || "Nova prijava!");
+          }
+        }
+      });
+
+      allReports = [];
+      snapshot.forEach((docSnap) => {
+        allReports.push({ id: docSnap.id, ...docSnap.data() });
+      });
+
+      const activeCount = allReports.filter(r => !r.resolved).length;
+      const resolvedCount = allReports.filter(r => r.resolved).length;
+      document.getElementById('count-active').textContent = activeCount;
+      document.getElementById('count-resolved').textContent = resolvedCount;
+
+      renderReports();
+      isFirstLoad = false;
+    }, (error) => {
+      console.error("Firestore error:", error);
+      reportsList.innerHTML = `<p class="text-center text-sm text-red-400 py-8">Greška sa bazom: ${error.message}</p>`;
+    });
+
+    reportsList.addEventListener('click', async (e) => {
+      const resolveBtn = e.target.closest('.open-resolve-modal-btn');
+      if (resolveBtn) {
+        resolvingDocId = resolveBtn.dataset.id;
+        const found = allReports.find(r => r.id === resolvingDocId);
+        resolvingPhotoUrl = found ? (found.photoUrl || "") : "";
+        const caseCode = resolveBtn.dataset.case;
+        document.getElementById('modal-case-info').textContent = `Slučaj: ${caseCode}`;
+        resolveModal.classList.remove('hidden');
+        return;
+      }
+
+      const deleteBtn = e.target.closest('.admin-delete-btn');
+      if (deleteBtn && isAdmin) {
+        const docId = deleteBtn.dataset.id;
+        if (confirm(i18n[lang].confirmDeleteArchive)) {
+          try {
+            await deleteDoc(doc(db, "alerts", docId));
+          } catch (err) {
+            alert("Greška pri brisanju: " + err.message);
+          }
+        }
+      }
+    });
+
+    function renderReports() {
+      const t = i18n[lang];
+      reportsList.innerHTML = "";
+
+      const filtered = allReports.filter(item => currentTab === 'active' ? !item.resolved : item.resolved);
+
+      if (filtered.length === 0) {
+        reportsList.innerHTML = `<p class="text-center text-sm text-slate-500 py-8">${currentTab === 'active' ? t.emptyActive : t.emptyResolved}</p>`;
+        return;
+      }
+
+      filtered.forEach((item) => {
+        const caseNum = item.caseNumber || `#${item.id.slice(0, 5).toUpperCase()}`;
+        const createdStr = formatDate(item.createdAt);
+        const mapLink = (item.lat && item.lng)
+          ? `https://www.google.com/maps/search/?api=1&query=${item.lat},${item.lng}`
+          : null;
+
+        const card = document.createElement('div');
+
+        if (!item.resolved) {
+          card.className = "bg-slate-900 border border-slate-700 rounded-2xl overflow-hidden shadow-md";
+          card.innerHTML = `
+            <div class="relative">
+              <img src="${item.photoUrl}" class="w-full h-56 object-cover" loading="lazy" />
+              <span class="absolute top-3 left-3 px-3 py-1 rounded-full text-xs font-extrabold bg-slate-950/85 text-amber-400 border border-amber-500/40">
+                ${t.statusMap[item.status] || item.status}
+              </span>
+              <span class="absolute top-3 right-3 px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-slate-950/85 text-slate-200 border border-slate-700">
+                ${escapeHtml(caseNum)}
+              </span>
+            </div>
+            <div class="p-4 space-y-3">
+              <div class="flex items-center justify-between text-xs text-slate-400">
+                <span>📅 ${t.reportedAt} <strong class="text-slate-200">${createdStr}</strong></span>
+              </div>
+
+              <p class="text-sm text-slate-100 font-medium">${escapeHtml(item.description || '')}</p>
+              ${item.audioUrl ? `<audio controls src="${item.audioUrl}" class="w-full h-9"></audio>` : ''}
+              
+              <div class="grid grid-cols-2 gap-2 pt-1">
+                <a href="tel:${item.phone}" class="py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs text-center flex items-center justify-center gap-1.5">
+                  📞 ${t.callBtn} (${escapeHtml(item.phone)})
+                </a>
+                
+                ${mapLink ? `
+                  <a href="${mapLink}" target="_blank" class="py-2.5 px-3 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs text-center flex items-center justify-center gap-1.5">
+                    🗺️ ${t.mapBtn}
+                  </a>
+                ` : `<div class="py-2.5 px-3 rounded-xl bg-slate-800 text-slate-500 text-xs text-center">Bez GPS-a</div>`}
+              </div>
+
+              <button type="button" data-id="${item.id}" data-case="${escapeHtml(caseNum)}" class="open-resolve-modal-btn w-full py-2.5 rounded-xl border border-slate-700 hover:bg-slate-800 text-slate-300 text-xs font-bold transition">
+                ✓ ${t.resolveBtn}
+              </button>
+            </div>
+          `;
+        } else {
+          const resolvedStr = formatDate(item.resolvedAt);
+          card.className = "bg-slate-900/70 border border-emerald-900/50 rounded-2xl p-4 space-y-2.5 shadow-sm";
+          card.innerHTML = `
+            <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+              <div class="flex items-center gap-2">
+                <span class="px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                  ✅ ${t.resolvedBadge}
+                </span>
+                <span class="text-xs font-mono font-bold text-amber-400">${escapeHtml(caseNum)}</span>
+              </div>
+              <span class="text-xs text-slate-400">${t.statusMap[item.status] || item.status}</span>
+            </div>
+
+            <div class="flex gap-3 items-start">
+              ${item.photoUrl ? `<img src="${item.photoUrl}" class="w-20 h-20 rounded-xl object-cover border border-slate-700 shrink-0" loading="lazy" />` : ''}
+              <p class="text-sm text-slate-200 font-medium">${escapeHtml(item.description || 'Bez opisa')}</p>
+            </div>
+
+            <div class="bg-slate-950/70 rounded-xl p-3 space-y-1.5 text-xs text-slate-300 border border-slate-800/80">
+              <div class="flex justify-between">
+                <span class="text-slate-400">📅 ${t.reportedAt}</span>
+                <span>${createdStr} (Prijavio: <a href="tel:${item.phone}" class="text-sky-400 underline">${escapeHtml(item.phone)}</a>)</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-400">✅ ${t.resolvedAt}</span>
+                <span class="text-emerald-400 font-semibold">${resolvedStr}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-400">👤 ${t.resolvedBy}</span>
+                <a href="tel:${item.resolvedByPhone}" class="text-amber-400 font-bold underline">${escapeHtml(item.resolvedByPhone || 'Nepoznato')}</a>
+              </div>
+              ${item.resolvedNote ? `
+                <div class="pt-1 border-t border-slate-800/80 text-slate-300">
+                  <span class="text-slate-400">📝 ${t.noteLabel}</span> ${escapeHtml(item.resolvedNote)}
+                </div>
+              ` : ''}
+            </div>
+
+            ${isAdmin ? `
+              <button type="button" data-id="${item.id}" class="admin-delete-btn w-full py-2 rounded-xl bg-red-950/70 hover:bg-red-900/80 border border-red-800/70 text-red-300 text-xs font-bold transition">
+                🗑️ ${t.deleteArchiveBtn}
+              </button>
+            ` : ''}
+          `;
+        }
+
+        reportsList.appendChild(card);
+      });
+    }
+
+    function showNotification(msg) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toast-text').textContent = msg;
+      toast.classList.remove('hidden');
+      if ("Notification" in window && Notification.permission === "granted") {
+        new Notification("Pronađi Šapu 🐾", { body: msg });
+      }
+    }
+
+    function escapeHtml(str) {
+      if (!str) return "";
+      return str.replace(/[&<>"']/g, m => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m]));
+    }
+  </script>
+</body>
+</html>

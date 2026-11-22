@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "me.pronadjisapu.app",
+        "sha256_cert_fingerprints": ["B7:00:02:9E:D6:D2:62:1E:F4:C3:2A:1B:18:12:FB:8A:72:64:E0:68:34:33:2C:7C:DE:F9:EE:70:E1:0E:99:A8"]
+      }
+    }]
