@@ -18,19 +18,19 @@
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col">
 
   <!-- HEADER -->
-  <header class="sticky top-0 z-30 bg-slate-900/90 backdrop-blur border-b border-slate-800 px-4 py-3 flex items-center justify-between">
-    <div class="flex items-center gap-2">
-      <span class="text-2xl">🐾</span>
-      <div>
-        <h1 id="app-title" class="font-bold text-lg leading-tight text-amber-400">Pronađi Šapu</h1>
-        <p id="app-subtitle" class="text-xs text-slate-400">Pomoć životinjama u realnom vremenu</p>
+  <header class="sticky top-0 z-30 bg-slate-900/90 backdrop-blur border-b border-slate-800 px-4 py-3 flex items-center justify-between gap-2">
+    <div class="flex items-center gap-2 min-w-0">
+      <span class="text-2xl shrink-0">🐾</span>
+      <div class="min-w-0">
+        <h1 id="app-title" class="font-bold text-lg leading-tight text-amber-400 truncate">Pronađi Šapu</h1>
+        <p id="app-subtitle" class="text-xs text-slate-400 leading-snug">Pomoć životinjama u realnom vremenu</p>
       </div>
     </div>
-    <div class="flex items-center gap-2">
-      <button id="admin-toggle-btn" type="button" class="px-3 py-1.5 rounded-full bg-slate-800 hover:bg-slate-700 text-xs font-semibold border border-slate-700 text-slate-300">
+    <div class="flex items-center gap-1.5 shrink-0">
+      <button id="admin-toggle-btn" type="button" class="shrink-0 whitespace-nowrap px-3 py-1.5 rounded-full bg-slate-800 hover:bg-slate-700 text-xs font-semibold border border-slate-700 text-slate-300">
         🔒 Admin
       </button>
-      <button id="lang-toggle" type="button" class="px-3 py-1.5 rounded-full bg-slate-800 hover:bg-slate-700 text-xs font-semibold border border-slate-700">
+      <button id="lang-toggle" type="button" class="shrink-0 whitespace-nowrap px-3 py-1.5 rounded-full bg-slate-800 hover:bg-slate-700 text-xs font-semibold border border-slate-700">
         EN / CG
       </button>
     </div>
@@ -169,11 +169,15 @@
 
     <!-- TABS: ACTIVE VS ARCHIVE -->
     <div class="grid grid-cols-2 gap-2 bg-slate-900 p-1.5 rounded-2xl border border-slate-800">
-      <button type="button" id="tab-active" class="py-2.5 px-3 rounded-xl bg-amber-500 text-slate-950 font-extrabold text-xs flex items-center justify-center gap-1.5 transition">
-        <span>🔴</span> <span id="tab-active-label">Aktivne prijave</span> (<span id="count-active">0</span>)
+      <button type="button" id="tab-active" class="py-2.5 px-2.5 rounded-xl bg-amber-500 text-slate-950 font-extrabold text-xs leading-tight text-center flex items-center justify-center gap-1.5 transition">
+        <span class="shrink-0">🔴</span>
+        <span id="tab-active-label">Aktivne prijave</span>
+        <span class="shrink-0">(<span id="count-active">0</span>)</span>
       </button>
-      <button type="button" id="tab-resolved" class="py-2.5 px-3 rounded-xl text-slate-400 hover:text-white font-bold text-xs flex items-center justify-center gap-1.5 transition">
-        <span>✅</span> <span id="tab-resolved-label">Arhiva zbrinutih</span> (<span id="count-resolved">0</span>)
+      <button type="button" id="tab-resolved" class="py-2.5 px-2.5 rounded-xl text-slate-400 hover:text-white font-bold text-xs leading-tight text-center flex items-center justify-center gap-1.5 transition">
+        <span class="shrink-0">✅</span>
+        <span id="tab-resolved-label">Arhiva zbrinutih</span>
+        <span class="shrink-0">(<span id="count-resolved">0</span>)</span>
       </button>
     </div>
 
@@ -321,10 +325,10 @@
     function updateAdminUI() {
       if (isAdmin) {
         adminToggleBtn.textContent = "🔓 Admin ON";
-        adminToggleBtn.className = "px-3 py-1.5 rounded-full bg-amber-500/20 text-amber-300 text-xs font-bold border border-amber-500/50";
+        adminToggleBtn.className = "shrink-0 whitespace-nowrap px-3 py-1.5 rounded-full bg-amber-500/20 text-amber-300 text-xs font-bold border border-amber-500/50";
       } else {
         adminToggleBtn.textContent = "🔒 Admin";
-        adminToggleBtn.className = "px-3 py-1.5 rounded-full bg-slate-800 hover:bg-slate-700 text-xs font-semibold border border-slate-700 text-slate-300";
+        adminToggleBtn.className = "shrink-0 whitespace-nowrap px-3 py-1.5 rounded-full bg-slate-800 hover:bg-slate-700 text-xs font-semibold border border-slate-700 text-slate-300";
       }
     }
     updateAdminUI();
@@ -372,15 +376,15 @@
 
     tabActiveBtn.addEventListener('click', () => {
       currentTab = 'active';
-      tabActiveBtn.className = "py-2.5 px-3 rounded-xl bg-amber-500 text-slate-950 font-extrabold text-xs flex items-center justify-center gap-1.5 transition";
-      tabResolvedBtn.className = "py-2.5 px-3 rounded-xl text-slate-400 hover:text-white font-bold text-xs flex items-center justify-center gap-1.5 transition";
+      tabActiveBtn.className = "py-2.5 px-2.5 rounded-xl bg-amber-500 text-slate-950 font-extrabold text-xs leading-tight text-center flex items-center justify-center gap-1.5 transition";
+      tabResolvedBtn.className = "py-2.5 px-2.5 rounded-xl text-slate-400 hover:text-white font-bold text-xs leading-tight text-center flex items-center justify-center gap-1.5 transition";
       renderReports();
     });
 
     tabResolvedBtn.addEventListener('click', () => {
       currentTab = 'resolved';
-      tabResolvedBtn.className = "py-2.5 px-3 rounded-xl bg-emerald-500 text-slate-950 font-extrabold text-xs flex items-center justify-center gap-1.5 transition";
-      tabActiveBtn.className = "py-2.5 px-3 rounded-xl text-slate-400 hover:text-white font-bold text-xs flex items-center justify-center gap-1.5 transition";
+      tabResolvedBtn.className = "py-2.5 px-2.5 rounded-xl bg-emerald-500 text-slate-950 font-extrabold text-xs leading-tight text-center flex items-center justify-center gap-1.5 transition";
+      tabActiveBtn.className = "py-2.5 px-2.5 rounded-xl text-slate-400 hover:text-white font-bold text-xs leading-tight text-center flex items-center justify-center gap-1.5 transition";
       renderReports();
     });
 
@@ -854,11 +858,3 @@
   </script>
 </body>
 </html>
-```[cite: 2]
-
----
-
-### 3. Push and Re-Test PWABuilder
-1. Open **Terminal** on your Mac and push the updated `index.html` and `manifest.json`:
-   ```bash
-   cd ~/Desktop/pronadji-sapu && git add index.html manifest.json && git commit -m "Fix relative manifest and icon links in index.html" && git push
